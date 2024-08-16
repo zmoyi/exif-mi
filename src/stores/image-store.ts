@@ -9,11 +9,13 @@ import {ExifData} from "@/lib/exif-lib";
 export type ImageState = {
     images: File[] | null,
     exif: ExifData[] | null,
+    progress: number,
 }
 
 export type ImageActions = {
     setImages: (images: ImageState["images"]) => void,
     setExif: (exif: ImageState["exif"]) => void,
+    setProgress: (progress: ImageState["progress"]) => void,
 }
 
 export type ImageStore = ImageState & ImageActions
@@ -22,12 +24,14 @@ export const initImageStore = (): ImageState => {
     return {
         images: null,
         exif: null,
+        progress: 0,
     }
 }
 
 export const defaultInitState: ImageState = {
     images: null,
     exif: null,
+    progress: 0,
 }
 
 export const createImageStore = (
@@ -42,6 +46,10 @@ export const createImageStore = (
         setExif: (exif) => set((state) => ({
             ...state,
             exif: exif,
+        })),
+        setProgress: (progress) => set((state) => ({
+            ...state,
+            progress: progress,
         })),
     }))
 }

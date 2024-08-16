@@ -72,7 +72,6 @@ export class CanvasLib {
         } else {
             return Math.floor(this.height * 0.09)
         }
-
     }
     createImageCanvas = async (
         {

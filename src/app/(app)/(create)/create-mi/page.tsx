@@ -4,113 +4,73 @@
  */
 
 'use client'
-/*
- * Copyright (c) 2024.
- * by 刘铭熙
- */
 
+import React, {useEffect} from "react";
 import {useImageStore} from "@/providers/counter-store-provider";
-import React, {useCallback, useEffect, useState} from "react";
-import Image from "next/image";
-import {Button} from "@/components/ui/button";
-import {drawCanvas} from "@/hook/canvas-hook";
+import {toast} from "@/components/ui/use-toast";
 import {Progress} from "@/components/ui/progress";
+import {forDrawMi} from "@/hook/canvas-hook";
+import Image from "next/image";
 
 const Page = () => {
-    const {images} = useImageStore(state => state)
-    const [imageUrl, setImageUrl] = React.useState<string[] | null>(null)
-    const [progress, setProgress] = useState(0);
-    const [isLoading, setIsLoading] = useState(false);
+    const {images, progress, setProgress} = useImageStore(state => state)
+    const [canvasImages, setCanvasImages] = React.useState<Map<number, Blob>>(new Map())
+    useEffect(() => {
+        // 如果没有选择图片，则不执行后续逻辑
+        if (!images || images.length === 0) return;
+        toast({
+            variant: 'default',
+            description: `已选择${images.length}张图片`,
+        });
+        const {results, onProgress} = forDrawMi(images);
 
-    const createCMI = async () => {
-        setIsLoading(true);
-    };
+// 注册进度回调
+        onProgress((updatedResults) => {
+            console.log('Processing progress:', updatedResults);
+            // 处理进度
+            setProgress(Math.round((updatedResults.size / images.length) * 100));
+            // updatedResults 是一个 Map<number, Blob> 对象，表示已处理的图片及其 Blob 数据
+        });
 
-    const drawCanvasCallback = useCallback(async (image: File) => {
-        // 假设 drawCanvas 是一个已定义的异步函数
-        return await drawCanvas(image);
-    }, []);
-    
+// 获取最终结果
+        results.then((finalResults) => {
+            console.log('All images processed:', finalResults);
+            setCanvasImages(finalResults)
+            setProgress(100)
+            // finalResults 是一个 Map<number, Blob> 对象，表示所有图片处理完成后的 Blob 数据
+        }).catch((error) => {
+            console.error('Error retrieving final results:', error);
+        });
+
+    }, [images, setProgress]);
 
     useEffect(() => {
-        if (isLoading && images) {
-            const startTime = performance.now(); // 记录开始时间
-            let completedImages = 0;
-            const totalImages = images.length;
-            let tempProgress = 0;
-
-            const updateProgress = (index: number) => {
-                tempProgress = Math.round(((index + 1) / totalImages) * 100);
-                setProgress(tempProgress);
-            };
-
-            const promises: any[] = [];
-
-            images.forEach((image, index) => {
-                const promise = drawCanvasCallback(image)
-                    .then(imageUrl => {
-                        if (imageUrl) {
-                            const endTime = performance.now(); // 记录每个图片处理完成的时间
-                            console.log(`Image ${index} processed in ${endTime - startTime} ms`);
-                            completedImages++;
-                            updateProgress(completedImages);
-                            return imageUrl;
-                        } else {
-                            return null;
-                        }
-                    })
-                    .catch(error => {
-                        console.error(`Error processing image at index ${index}:`, error);
-                        return null; // 返回 null 以便保留数组长度一致
-                    });
-                promises.push(promise);
-            });
-
-            Promise.all(promises)
-                .then(imageUrls => {
-                    const validImageUrls = imageUrls.filter(url => url !== null);
-                    setImageUrl(validImageUrls);
-                    setProgress(100);
-                    setIsLoading(false);
-                    const endTime = performance.now(); // 记录整个处理完成的时间
-                    console.log(`All images processed in ${endTime - startTime} ms`);
-                })
-                .catch(error => {
-                    console.error('Error during image processing:', error);
-                    setIsLoading(false);
-                });
+        if (progress === 0) {
+            setCanvasImages(new Map())
         }
-    }, [images, isLoading, drawCanvasCallback]);
-
+    }, [progress]);
     return (
         <>
             <div className={'space-y-5'}>
-                <div className={'flex flex-row justify-between items-center'}>
-                    <div>
-
-                        <p className={'text-sm font-bold text-muted-foreground'}>批量生成进度{` ${progress}%`}</p>
-                        <Progress value={progress}/>
-                    </div>
-                    <div>
-                        {
-                            images && images.length > 0 && (
-                                <Button onClick={createCMI} variant={'outline'}>
-                                    生成
-                                </Button>
-                            )
-                        }
-                    </div>
-
+                <div>
+                    <p className={'text-sm font-bold text-muted-foreground mb-2'}>解析进度</p>
+                    <Progress value={progress} className="w-full"/>
                 </div>
-                <div className={'lg:columns-3 gap-5 space-y-5'}>
+                <div className={'lg:columns-2 space-y-5'}>
                     {
-                        imageUrl && imageUrl.map((item, index) => (
-                            <Image key={index} src={item} alt={'a'} width={200} height={200}
-                                   className={'w-full rounded-md'}/>
-                        ))
+                        Array.from(canvasImages.entries()).map(([index, item]) => {
+                            return (
+                                <div key={index} className={'w-full'}>
+                                    <Image src={URL.createObjectURL(item)} width={500} height={500} alt={'canvas'}
+                                           className={'w-full h-auto'}/>
+                                </div>
+                            )
+                        })
                     }
                 </div>
+
             </div>
+
         </>
     )
 };
