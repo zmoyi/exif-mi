@@ -13,35 +13,40 @@ import {forDrawMi} from "@/hook/canvas-hook";
 import Image from "next/image";
 
 const Page = () => {
-    const {images, progress, setProgress} = useImageStore(state => state)
+    const {images, progress, setProgress, setIsLoading} = useImageStore(state => state)
     const [canvasImages, setCanvasImages] = React.useState<Map<number, Blob>>(new Map())
     useEffect(() => {
-        // 如果没有选择图片，则不执行后续逻辑
         if (!images || images.length === 0) return;
+        setIsLoading(true);
         toast({
             variant: 'default',
             description: `已选择${images.length}张图片`,
         });
-        const {results, onProgress} = forDrawMi(images);
 
-// 注册进度回调
+        const {results, onProgress, abort} = forDrawMi(images);
+
         onProgress((updatedResults) => {
-            console.log('Processing progress:', updatedResults);
-            // 处理进度
             setProgress(Math.round((updatedResults.size / images.length) * 100));
-            // updatedResults 是一个 Map<number, Blob> 对象，表示已处理的图片及其 Blob 数据
         });
 
-// 获取最终结果
         results.then((finalResults) => {
-            console.log('All images processed:', finalResults);
-            setCanvasImages(finalResults)
-            setProgress(100)
-            // finalResults 是一个 Map<number, Blob> 对象，表示所有图片处理完成后的 Blob 数据
+            setCanvasImages(finalResults);
+            setProgress(100);
+            setIsLoading(false);
         }).catch((error) => {
-            console.error('Error retrieving final results:', error);
+            if (error.message !== 'Image processing aborted') {
+                toast({
+                    variant: 'destructive',
+                    description: '图片处理时发生错误，请重试。',
+                });
+                setIsLoading(false);
+            }
         });
 
+        // 清理函数，用于在组件卸载或 images 变化时中止操作
+        return () => {
+            abort(); // 调用 abort 中止操作
+        };
     }, [images, setProgress]);
 
     useEffect(() => {
@@ -53,7 +58,7 @@ const Page = () => {
         <>
             <div className={'space-y-5'}>
                 <div>
-                    <p className={'text-sm font-bold text-muted-foreground mb-2'}>解析进度</p>
+                    <p className={'text-sm font-bold text-muted-foreground mb-2'}>解析进度 {progress}%</p>
                     <Progress value={progress} className="w-full"/>
                 </div>
                 <div className={'lg:columns-2 space-y-5'}>

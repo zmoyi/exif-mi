@@ -7,10 +7,10 @@ export interface KonvaLibProps {
 }
 
 export class KonvaLib {
-    private file: File; // 图片文件
+    file: File; // 图片文件
+    isMi: boolean; // 是否显示水印
     private exif: ExifData; // 图片的EXIF数据
     private image: HTMLImageElement = new Image(); // HTMLImageElement对象，用于加载图片
-    private isMi: boolean; // 是否显示水印
 
     /**
      * 构造函数
@@ -32,7 +32,6 @@ export class KonvaLib {
     async createStage(canvas?: HTMLCanvasElement): Promise<HTMLCanvasElement> {
         // 加载图片
         this.image = await this.loadImage();
-
         // 如果没有提供canvas，创建新的canvas元素
         if (!canvas) {
             canvas = document.createElement('canvas');
@@ -45,11 +44,10 @@ export class KonvaLib {
 
         // 设置画布宽高
         canvas.width = this.image.width;
-        canvas.height = imageCanvasHeight;
+        canvas.height = imageCanvasHeight
 
         // 获取画布的2D上下文
         const ctx = this.getCanvasContext(canvas);
-
         // 在画布上绘制图片
         this.renderImage(ctx);
 
@@ -57,7 +55,6 @@ export class KonvaLib {
         if (this.isMi) {
             this.renderWatermark(ctx, watermarkHeight);
         }
-
         return canvas;
     }
 
@@ -66,7 +63,7 @@ export class KonvaLib {
      * @param ctx Canvas的2D上下文
      */
     private renderImage(ctx: CanvasRenderingContext2D): void {
-        ctx.imageSmoothingEnabled = true; // 启用图像平滑
+        // ctx.imageSmoothingEnabled = true; // 启用图像平滑
         ctx.clearRect(0, 0, this.image.width, this.image.height); // 清空画布
         ctx.drawImage(this.image, 0, 0, this.image.width, this.image.height); // 绘制图片
     }
@@ -93,14 +90,36 @@ export class KonvaLib {
         canvas.height = watermarkHeight;
 
         const ctx = this.getCanvasContext(canvas); // 获取canvas的2D上下文
-        ctx.fillStyle = '#ffffff'; // 设置填充颜色为白色
-        ctx.fillRect(0, 0, canvas.width, canvas.height); // 填充整个画布
+        // 设置画布背景为白色
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        ctx.fillStyle = '#000000'; // 设置文本颜色为黑色
-        ctx.font = `bold ${this.calculateFontSize()}px Arial`; // 设置字体
-        ctx.textAlign = "center"; // 设置文本对齐方式为居中
-        ctx.textBaseline = "middle"; // 设置文本基线为中间
-        ctx.fillText(this.exif.Make, canvas.width / 2, canvas.height / 2); // 绘制水印文本
+// 设置文本颜色和字体
+        ctx.fillStyle = '#000000';
+        ctx.font = `bold ${this.calculateFontSize()}px sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+// 计算每行文本的高度
+        const fontSize = this.calculateFontSize();
+        const lineHeight = fontSize * 1.4; // 行高（可调整）
+
+// 根据画布高度计算文本的起始Y位置，使文本居中
+        const textStartY = canvas.height / 2 - lineHeight / 2;
+
+// 绘制第一行文本（设备信息）
+        ctx.fillText(
+            `${this.exif.Make} ${this.exif.Model}`,
+            canvas.width / 2,
+            textStartY
+        );
+
+// 绘制第二行文本（拍摄时间）
+        ctx.fillText(
+            `${this.exif.LensModel}`,
+            canvas.width / 2,
+            textStartY + lineHeight
+        );
 
         return canvas;
     }
@@ -109,16 +128,30 @@ export class KonvaLib {
      * 根据图片的宽高比计算水印的高度
      * @returns 水印的高度
      */
-    private getWatermarkHeight(): number {
+    private getWatermarkHeight(adjustmentFactor: number = 1): number {
         const aspectRatio = this.image.width / this.image.height; // 计算图片的宽高比
+
+        // 线性插值函数，根据宽高比在[min, max]之间插值水印高度
+        const interpolate = (min: number, max: number, factor: number): number => {
+            return min + (max - min) * factor;
+        };
+
+        let heightRatio: number;
+
         if (aspectRatio < 1) {
-            return Math.floor(this.image.height * 0.08); // 竖屏图片，水印高度为图片高度的8%
+            // 竖屏图片，高度从8%到10%之间变化，使用adjustmentFactor调整
+            heightRatio = interpolate(0.08 * adjustmentFactor, 0.10 * adjustmentFactor, aspectRatio);
         } else if (aspectRatio > 1) {
-            return Math.floor(this.image.height * 0.13); // 横屏图片，水印高度为图片高度的13%
+            // 横屏图片，高度从12%到15%之间变化，使用adjustmentFactor调整
+            heightRatio = interpolate(0.12 * adjustmentFactor, 0.15 * adjustmentFactor, aspectRatio - 1);
         } else {
-            return Math.floor(this.image.height * 0.09); // 方形图片，水印高度为图片高度的9%
+            // 方形图片，固定高度9%，使用adjustmentFactor调整
+            heightRatio = 0.09 * adjustmentFactor;
         }
+
+        return Math.floor(this.image.height * heightRatio);
     }
+
 
     /**
      * 计算适合的水印字体大小
