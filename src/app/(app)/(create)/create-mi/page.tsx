@@ -11,6 +11,7 @@ import {toast} from "@/components/ui/use-toast";
 import {Progress} from "@/components/ui/progress";
 import {forDrawMi} from "@/hook/canvas-hook";
 import Image from "next/image";
+import {Badge} from "@/components/ui/badge";
 
 const Page = () => {
     const {images, progress, setProgress, setIsLoading} = useImageStore(state => state)
@@ -47,7 +48,7 @@ const Page = () => {
         return () => {
             abort(); // 调用 abort 中止操作
         };
-    }, [images, setProgress]);
+    }, [images, setIsLoading, setProgress]);
 
     useEffect(() => {
         if (progress === 0) {
@@ -65,9 +66,25 @@ const Page = () => {
                     {
                         Array.from(canvasImages.entries()).map(([index, item]) => {
                             return (
-                                <div key={index} className={'w-full'}>
+                                <div key={index} className={'w-full relative'}>
                                     <Image src={URL.createObjectURL(item)} width={500} height={500} alt={'canvas'}
                                            className={'w-full h-auto'}/>
+                                    <div
+                                        className={'absolute top-1 left-1 right-1 flex flex-row items-center justify-between'}>
+                                        <Badge>
+                                            <a className={'text-xs'} href={URL.createObjectURL(item)}
+                                               download={`image_${index}.jpg`}>点击下载</a>
+                                        </Badge>
+                                        <Badge>
+                                            <a className={'text-xs'} href={URL.createObjectURL(item)}
+                                               target={'_blank'}>点击预览</a>
+                                        </Badge>
+                                        {/*    点击编辑*/}
+                                        <Badge>
+                                            <a className={'text-xs'} href={URL.createObjectURL(item)}
+                                               target={'_blank'}>点击编辑</a>
+                                        </Badge>
+                                    </div>
                                 </div>
                             )
                         })
