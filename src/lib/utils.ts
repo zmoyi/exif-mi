@@ -15,8 +15,8 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 
-export function selectLogo(imageName: string): string | null {
-    if (!imageName) return null;
+export function selectLogo(imageName: string): string | undefined {
+    if (!imageName) return undefined;
     const lowerCaseName = imageName.toLowerCase(); // 将名称转换为小写
 
     switch (true) {
@@ -27,6 +27,6 @@ export function selectLogo(imageName: string): string | null {
         case lowerCaseName.includes("canon"):
             return canonLogo.src; // 如果包含"canon"，返回Canon的Logo路径
         default:
-            return null; // 如果不匹配任何品牌，返回空字符串或默认的Logo路径
+            return undefined; // 如果不匹配任何品牌，返回空字符串或默认的Logo路径
     }
 }
