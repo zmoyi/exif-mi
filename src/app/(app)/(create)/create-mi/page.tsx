@@ -12,6 +12,7 @@ import {Progress} from "@/components/ui/progress";
 import {forDrawMi} from "@/hook/canvas-hook";
 import Image from "next/image";
 import {Badge} from "@/components/ui/badge";
+import {CanvasUtils} from "@/lib/CanvasUtils";
 
 const Page = () => {
     const {images, progress, setProgress, setIsLoading} = useImageStore(state => state)
@@ -73,7 +74,7 @@ const Page = () => {
                                         className={'absolute top-1 left-1 right-1 flex flex-row items-center justify-between'}>
                                         <Badge>
                                             <a className={'text-xs'} href={URL.createObjectURL(item)}
-                                               download={`image_${index}.jpg`}>点击下载</a>
+                                               download={`${CanvasUtils.RandomImageName()}.jpg`}>点击下载</a>
                                         </Badge>
                                         <Badge>
                                             <a className={'text-xs'} href={URL.createObjectURL(item)}

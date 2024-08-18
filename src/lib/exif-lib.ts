@@ -72,6 +72,18 @@ export class ExifLib {
         this.file = exifProps.file;
     }
 
+    // 处理曝光时间为1/100格式
+    static getExposureTime = (exposureTime: number | undefined) => {
+        if (exposureTime) {
+            if (exposureTime < 1) {
+                return `1/${Math.round(1 / exposureTime)}`;
+            } else {
+                return `${exposureTime}s`;
+            }
+        }
+        return '';
+    }
+
     getExif = async () => {
         this.exif = await exifr.parse(this.file);
         return this.exif

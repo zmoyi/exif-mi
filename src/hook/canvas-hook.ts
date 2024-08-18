@@ -4,6 +4,7 @@
  */
 import {ExifLib} from "@/lib/exif-lib";
 import {KonvaLib} from "@/lib/konva-lib";
+import nikonLogo from "@/../public/logo/nikon.svg"
 
 const createMI = async (image: File) => {
     const exifLib = new ExifLib({
@@ -25,8 +26,78 @@ export const drawMi = async (props: drawMiProps) => {
         exif: exif,
         isMi: true
     })
-    // 等待图片加载
-    return await canvasLib.createStage()
+    return await canvasLib.createStage({
+        lineTexts: [
+            {
+                lineText: `${exif.Make} ${exif.Model}`,
+                lineStyle: {
+                    color: "#000000",
+                    isBold: true,
+                    textAlign: 'left',
+                    textBaseline: 'middle'
+                },
+                linePosition: {
+                    position: "middleLeft",
+                    positionOffsets: {
+                        x: 0, // 动态调整居中位置
+                        y: -0.1,
+                    },
+                },
+            },
+            {
+                lineText: `${exif.LensModel}`,
+                lineStyle: {
+                    color: "#000000",
+                    size: -2,
+                    textAlign: 'left',
+                    textBaseline: 'middle'
+                },
+                linePosition: {
+                    position: "middleLeft",
+                    positionOffsets: {
+                        x: 0, // 动态调整居中位置
+                        y: 0.1,
+                    },
+                },
+            },
+            {
+                lineText: `${exif.FocalLength}mm ISO${exif.ISO} F${exif.FNumber} ${ExifLib.getExposureTime(exif.ExposureTime)}s`,
+                lineStyle: {
+                    color: "#000000",
+                    isBold: true,
+                    textAlign: 'left',
+                    textBaseline: 'middle'
+                },
+                linePosition: {
+                    position: "middleRight",
+                    positionOffsets: {
+                        x: 0, // 动态调整居中位置
+                        y: -0.1,
+                    },
+                },
+            },
+            {
+                lineText: `${new Date(exif.DateTimeOriginal).toDateString()}`,
+                lineStyle: {
+                    color: "#000000",
+                    size: -2,
+                    textAlign: 'left',
+                    textBaseline: 'middle'
+                },
+                linePosition: {
+                    position: "middleRight",
+                    positionOffsets: {
+                        x: 0, // 动态调整居中位置
+                        y: 0.1,
+                    },
+                },
+            },
+        ],
+        logoSrc: nikonLogo.src,
+        style: {
+            color: "#ffffff"
+        }
+    })
 }
 export const forDrawMi = (images: File[], maxConcurrent: number = 5) => {
     // 使用 Map 存储处理后的 Blob 结果，键为图片的索引，值为对应的 Blob
@@ -49,8 +120,7 @@ export const forDrawMi = (images: File[], maxConcurrent: number = 5) => {
             // 调用 drawMi 函数处理图片
             const result = await drawMi({image});
             // 将处理结果转换为 Blob
-            const blob = await new Promise<Blob | null>((resolve) => result.toBlob(resolve, 'image/jpeg', 1));
-
+            const blob = await new Promise<Blob | null>((resolve) => result.canvas.toBlob(resolve, 'image/jpeg', 1));
             if (!blob) {
                 console.error('Blob is null');
                 throw new Error('Blob is null'); // 如果 Blob 为空，抛出错误
