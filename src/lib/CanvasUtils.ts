@@ -145,7 +145,7 @@ export class CanvasUtils {
         position: { x: number; y: number }
     ) {
         ctx.fillStyle = lineStyle.color; // 设置文本颜色
-        ctx.font = `bold ${lineStyle.size}px sans-serif`; // 设置文本字体和大小
+        ctx.font = `${lineStyle.isBold ? 'bold' : ''} ${lineStyle.size}px sans-serif`; // 设置文本字体和大小
         ctx.textAlign = lineStyle.textAlign; // 设置文本对齐方式
         ctx.textBaseline = lineStyle.textBaseline; // 设置文本基线
         ctx.fillText(lineText, position.x, position.y); // 在指定位置绘制文本

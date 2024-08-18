@@ -1,10 +1,8 @@
 import {lineTextProps, MiCanvasProps, Watermark, WatermarkCanvas} from "@/lib/lib-type";
 import {CanvasUtils} from "@/lib/CanvasUtils";
-import {ExifData} from "@/lib/exif-lib";
 
 export interface KonvaLibProps {
     file: File;
-    exif: ExifData;
     isMi?: boolean;
 }
 

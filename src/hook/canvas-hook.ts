@@ -4,7 +4,7 @@
  */
 import {ExifLib} from "@/lib/exif-lib";
 import {KonvaLib} from "@/lib/konva-lib";
-import nikonLogo from "@/../public/logo/nikon.svg"
+import {selectLogo} from "@/lib/utils";
 
 const createMI = async (image: File) => {
     const exifLib = new ExifLib({
@@ -23,9 +23,11 @@ export const drawMi = async (props: drawMiProps) => {
     }
     const canvasLib = new KonvaLib({
         file: props.image,
-        exif: exif,
         isMi: true
     })
+
+    const logoSrc = selectLogo(exif.Make)
+
     return await canvasLib.createStage({
         lineTexts: [
             {
@@ -61,7 +63,7 @@ export const drawMi = async (props: drawMiProps) => {
                 },
             },
             {
-                lineText: `${exif.FocalLength}mm ISO${exif.ISO} F${exif.FNumber} ${ExifLib.getExposureTime(exif.ExposureTime)}s`,
+                lineText: `${exif.FocalLength}mm F${exif.FNumber} ${ExifLib.getExposureTime(exif.ExposureTime)}s ISO${exif.ISO}`,
                 lineStyle: {
                     color: "#000000",
                     isBold: true,
@@ -93,7 +95,7 @@ export const drawMi = async (props: drawMiProps) => {
                 },
             },
         ],
-        logoSrc: nikonLogo.src,
+        logoSrc: logoSrc,
         style: {
             color: "#ffffff"
         }
@@ -125,8 +127,6 @@ export const forDrawMi = (images: File[], maxConcurrent: number = 5) => {
                 console.error('Blob is null');
                 throw new Error('Blob is null'); // 如果 Blob 为空，抛出错误
             }
-            console.log("blob", URL.createObjectURL(blob))
-
             // 将处理后的 Blob 存入 results Map 中
             results.set(index, blob);
             // 调用所有注册的进度回调函数
