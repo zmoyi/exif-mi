@@ -48,6 +48,9 @@ export default function RootLayout({
                                 <li>
                                     <a href={'https://twitter.com/exifmi'}>About</a>
                                 </li>
+                               <li>
+                                    <a href={'http://beian.miit.gov.cn/'}>陕ICP备2024023288号-2</a>
+                                </li>
                             </ul>
                         </div>
 
